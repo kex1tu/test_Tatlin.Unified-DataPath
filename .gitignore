@@ -65,5 +65,12 @@ vcpkg_installed/
 *.dwo
 
 # test output & cache
-Testing/
 .cache/
+test.txt
+/tmp
+#*.bin
+callgrind.out.*
+*.py
+__pycache__
+Dockerfile.act
+.actrc

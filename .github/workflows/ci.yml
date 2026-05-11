@@ -1,0 +1,113 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  code-checks:
+    runs-on: gtest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Check code formatting
+      run: |
+        find src/ tests/ -name "*.cpp" -o -name "*.hpp" | xargs clang-format --dry-run --Werror
+    
+    - name: Static analysis
+      run: |
+        cppcheck --enable=all --error-exitcode=1 --suppress=missingIncludeSystem src/ tests/
+
+  unit-tests:
+    runs-on: gtest
+
+    needs: code-checks
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Configure CMake
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Debug
+    
+    - name: Build
+      run: |
+        cd build
+        make -j$(nproc)
+    
+    - name: Run unit tests
+      run: |
+        cd build
+        ctest
+
+  large-data-tests:
+    runs-on: gtest
+
+    needs: unit-tests
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Configure CMake
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release
+    
+    - name: Build
+      run: |
+        cd build
+        make -j$(nproc)
+    
+    - name: Run large data tests
+      run: |
+        cd build
+        for i in {0..9}; do
+          echo "Testing with input${i}.bin"
+          ./Tatlin ../tests/LargeTests/input${i}.bin ../tests/LargeTests/current_output${i}.bin
+          if [ $? -ne 0 ]; then
+            echo "Test with input${i}.bin failed"
+            exit 1
+          fi
+          # Compare output with expected result
+          if ! cmp "../tests/LargeTests/current_output${i}.bin" "../tests/LargeTests/output${i}.bin" 2>/dev/null; then
+            echo "Output mismatch for input${i}.bin"
+            exit 1
+          fi
+        done
+        echo "All large data tests passed"
+
+  memory-leak-checks:
+    runs-on: gtest
+
+    needs: large-data-tests
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Configure CMake for Valgrind
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Debug
+    
+    - name: Build
+      run: |
+        cd build
+        make -j$(nproc)
+    
+    - name: Run gtest with Valgrind
+      run: |
+        cd build
+        valgrind --leak-check=full --error-exitcode=1 --track-origins=yes ./unit_tests
+    - name: Run Custom testswith Valgrind
+      run: |
+        cd build
+        valgrind --leak-check=full --error-exitcode=1 --track-origins=yes ./Tatlin ../tests/LargeTests/input0.bin ../tests/LargeTests/current_output0.bin
