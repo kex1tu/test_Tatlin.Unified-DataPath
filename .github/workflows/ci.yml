@@ -77,10 +77,18 @@ jobs:
       run: |
         cd build
         for i in {0..9}; do
-          ./Tatlin ../tests/LargeTests/input${i}.bin ../tests/LargeTests/current_output${i}.bin
-          cmp "../tests/LargeTests/current_output${i}.bin" "../tests/LargeTests/output${i}.bin"
+          if ! ./Tatlin ../tests/LargeTests/input${i}.bin ../tests/LargeTests/current_output${i}.bin; then
+            echo "Crashed or returned error on test ${i}"
+            exit 1
+          fi
+          
+          if ! cmp "../tests/LargeTests/current_output${i}.bin" "../tests/LargeTests/output${i}.bin"; then
+            echo "Output mismatch for test ${i}"
+            exit 1
+          fi
+          
+          echo "Test $i passed!"
         done
-
     - name: Memory Leak Check (Valgrind)
       run: |
         cd build
