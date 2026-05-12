@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <fstream>
 #include <stdexcept>
+
 TapeConfig FileTape::global_config;
 
 namespace {
@@ -17,9 +18,8 @@ FileTape::FileTape(const std::string &filename, OpenMode mode) {
   if (mode == OpenMode::kCreate) {
     flags |= std::ios::trunc;
   }
-  std::fstream file(filename, flags);
-  if (file.is_open()) {
-    this->file_ = std::move(file);
+  file_.open(filename, flags);
+  if (file_.is_open()) {
     position_ = 0;
     file_.seekg(0, std::ios::end);
     const auto bytes = file_.tellg();
@@ -30,6 +30,7 @@ FileTape::FileTape(const std::string &filename, OpenMode mode) {
     size_ = static_cast<uint64_t>(bytes / sizeof(int32_t));
     file_.seekg(0, std::ios::beg);
     file_.seekp(0, std::ios::beg);
+    file_position_ = 0;
   } else {
     throw std::runtime_error("FileTape: file " + filename + " not open");
   }
@@ -37,14 +38,22 @@ FileTape::FileTape(const std::string &filename, OpenMode mode) {
 void FileTape::write(int32_t value) {
   applyDelay(global_config.write_delay_ms);
 
-  file_.clear();
-  file_.seekp(GetOffset64(position_), std::ios::beg);
+  if (position_ > size_) {
+    throw std::runtime_error("Write error, end of tape");
+  }
+  if (file_position_ != position_) {
+    file_.clear();
+    file_.seekg(GetOffset64(position_), std::ios::beg);
+    file_.seekp(GetOffset64(position_), std::ios::beg);
+    file_position_ = position_;
+  }
   file_.write(reinterpret_cast<const char *>(&value), sizeof(int32_t));
 
   if (!file_) {
     throw std::runtime_error("Write error");
   }
   size_ = std::max(size_, position_ + 1);
+  ++file_position_;
 }
 int32_t FileTape::read() {
   applyDelay(global_config.read_delay_ms);
@@ -53,13 +62,19 @@ int32_t FileTape::read() {
   if (position_ >= size_) {
     throw std::runtime_error("Read error, end of tape");
   }
-  file_.clear();
-  file_.seekg(GetOffset64(position_), std::ios::beg);
+  if (file_position_ != position_) {
+    file_.clear();
+    file_.seekg(GetOffset64(position_), std::ios::beg);
+    file_.seekp(GetOffset64(position_), std::ios::beg);
+    file_position_ = position_;
+  }
+
   file_.read(reinterpret_cast<char *>(&value), sizeof(int32_t));
 
   if (!file_) {
     throw std::runtime_error("Read error, bad file");
   }
+  ++file_position_;
   return value;
 }
 void FileTape::moveForward() {
@@ -81,6 +96,7 @@ void FileTape::rewind() {
   file_.seekg(0, std::ios::beg);
   file_.seekp(0, std::ios::beg);
   position_ = 0;
+  file_position_ = 0;
 }
 bool FileTape::isEnd() const { return position_ >= size_; }
 uint64_t FileTape::size() const { return size_; }
