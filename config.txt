@@ -1,4 +1,4 @@
-memory_limit_bytes=16
+memory_limit_bytes=0
 read_delay_ms=0
 write_delay_ms=0
 move_delay_ms=0

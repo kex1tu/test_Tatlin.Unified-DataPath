@@ -10,7 +10,7 @@ set(LIB_SOURCES
     src/TapeSorter.cpp
 )
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic-errors -Wall -Wextra -Werror -gdwarf-4 -std=c++20")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -pedantic-errors -Wall -Wextra -Werror -gdwarf-4 -std=c++20")
 
 option(ENABLE_ASAN "Enable AddressSanitizer" OFF)
 option(ENABLE_LSAN "Enable LeakSanitizer" OFF)

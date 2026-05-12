@@ -1,8 +1,9 @@
 #pragma once
+// #include <chrono>
 #include <cstdint>
 #include <fstream>
 #include <string>
-#include <thread>
+// #include <thread>
 
 #include "TapeConfig.hpp"
 #include "TapeInterface.hpp"
@@ -28,12 +29,15 @@ class FileTape : public TapeInterface {
   void flush();
 
  private:
-  static void applyDelay(uint64_t delay_ms) {
+  void applyDelay(uint64_t delay_ms) {
     if (delay_ms > 0) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
+      total_time_delay_ += delay_ms;
+      // std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
     }
   }
-  std::fstream file_;
   uint64_t position_ = 0;
+  uint64_t file_position_ = 0;
   uint64_t size_ = 0;
+  uint64_t total_time_delay_ = 0;
+  std::fstream file_;
 };
