@@ -200,10 +200,12 @@ void TapeSorter::helpers::merge_sort(TapeInterface& input,
 
   levels[levels.size() - 1].push_back(merged);
   std::string result_name;
-  for (const auto& lvl : levels) {
-    if (!lvl.empty()) {
-      result_name = lvl[0];
-    }
+  auto it = std::find_if(
+      levels.rbegin(), levels.rend(),
+      [](const std::vector<std::string>& lvl) { return !lvl.empty(); });
+
+  if (it != levels.rend()) {
+    result_name = it->front();
   }
   // std::cout << "levels " << levels.size() - 1 << '\n';
   FileTape result(result_name, OpenMode::kOpen);
