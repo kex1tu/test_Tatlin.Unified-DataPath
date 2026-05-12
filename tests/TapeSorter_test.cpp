@@ -9,8 +9,6 @@
 
 #include "../src/FileTape.hpp"
 
-namespace fs = std::filesystem;
-
 class TapeSorterTest : public ::testing::Test {
  protected:
   static const std::string kInputFileName;
