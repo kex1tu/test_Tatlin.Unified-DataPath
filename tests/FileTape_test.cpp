@@ -5,7 +5,6 @@
 #include <fstream>
 #include <limits>
 #include <vector>
-namespace fs = std::filesystem;
 
 class FileTapeTest : public ::testing::Test {};
 
