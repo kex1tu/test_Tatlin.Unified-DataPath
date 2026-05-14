@@ -37,7 +37,8 @@ void TapeSorter::Sort(TapeInterface& input, TapeInterface& output) {
 
     const uint64_t tape_size = input.size();
     if (kElementLimit <= tape_size) {
-      uint64_t reserved = (kMaxOpenTempTapes * 10240 + kMinElementLimit * 11);
+      uint64_t reserved =
+          ((kMaxOpenTempTapes * 10240) + (kMinElementLimit * 11));
       uint64_t available = std::max<uint64_t>(
           FileTape::global_config.memory_limit_bytes, reserved);
       kElementLimit = std::max<uint64_t>(
