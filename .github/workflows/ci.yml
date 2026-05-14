@@ -46,7 +46,7 @@ jobs:
             mem_limit: 67108864
             delay: 0
           - config-name: low-memory
-            mem_limit: 16777216
+            mem_limit: 4194304
             delay: 0
           - config-name: high-memory
             mem_limit: 536870912

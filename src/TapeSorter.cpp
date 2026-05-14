@@ -1,11 +1,13 @@
 #include "TapeSorter.hpp"
 
+#include <sys/types.h>
+
 #include <algorithm>
 #include <array>
 #include <cstdint>
 #include <filesystem>
 #include <functional>
-// #include <iostream>
+#include <iostream>
 #include <memory>
 #include <queue>
 #include <string>
@@ -20,39 +22,35 @@ struct ScopeExit {
   ~ScopeExit() { fn(); }
 };
 
-static constexpr uint32_t kMaxOpenTempTapes = 64;
-static constexpr uint32_t kMinElementLimit = 1024;
+static constexpr uint64_t kMaxOpenTempTapes = 32;
+static constexpr uint64_t kMinElementLimit = 1024;
 void TapeSorter::Sort(TapeInterface& input, TapeInterface& output) {
-  // Limit для RAM задан в байтах
-  // считаем, что под хранение данных половина RAM
-  // остальное под доп. расходы
-  // так же будем считать что можно в оперативной памяти хранить не менее 1024
-  // элемента
+  try {
+    // Limit для RAM задан в байтах
+    // считаем, что под хранение данных половина RAM
+    // остальное под доп. расходы
+    // так же будем считать что можно в оперативной памяти хранить не менее 1024
+    // элемента
 
-  const uint64_t kElementLimit = std::max<uint64_t>(
-      kMinElementLimit, (FileTape::global_config.memory_limit_bytes / 11));
+    uint64_t kElementLimit = std::max<uint64_t>(
+        kMinElementLimit, (FileTape::global_config.memory_limit_bytes / 11));
 
-  // делим на sizeof(int32_t) чтобы узначть к-во элементов которое можно было бы
-  // максимум разместить в памяти. делим на 2 т.к. radix sort требует доп.
-  // память в размере N. и умножаем на 3/4 чтобы 1/4 использовать под доп
-  // расходы а остальное под хранение данных
-  //
-  // получаем, что примерно 9% от общего объема памяти в байтах это к-во
-  // элементов, для удобства делим на 11
-  // ПО РЕЗУЛЬТАТАМ ТЕСТОВ минимальнный объём памяти требуемый для выполенения
-  // программы < 10 мб, для удобства округляем до 16 мб
+    const uint64_t tape_size = input.size();
+    if (kElementLimit <= tape_size) {
+      uint64_t reserved =
+          ((kMaxOpenTempTapes * 10240) + (kMinElementLimit * 11));
+      uint64_t available = std::max<uint64_t>(
+          FileTape::global_config.memory_limit_bytes, reserved);
+      kElementLimit = std::max<uint64_t>(
+          kMinElementLimit, (available - (kMaxOpenTempTapes * 10240)) / 11);
 
-  /*const uint64_t kElementLimit = std::max<uint64_t>(
-    kMinElementLimit,
-    (((FileTape::global_config.memory_limit_bytes) / (2 * sizeof(int32_t))) *
-     3) /
-        4);*/
-
-  const uint64_t tape_size = input.size();
-  if (kElementLimit <= tape_size) {
-    helpers::merge_sort(input, output, kElementLimit);
-  } else {
-    helpers::radix_sort(input, output);
+      // std::cout << "kElementLimit " << kElementLimit << '\n';
+      helpers::merge_sort(input, output, kElementLimit);
+    } else {
+      helpers::radix_sort(input, output);
+    }
+  } catch (std::exception& e) {
+    std::cerr << e.what() << "\n";
   }
 }
 void TapeSorter::helpers::help_radix_sort(std::vector<int32_t>& input,
