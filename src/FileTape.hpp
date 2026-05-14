@@ -1,9 +1,9 @@
 #pragma once
-// #include <chrono>
+#include <chrono>
 #include <cstdint>
 #include <fstream>
 #include <string>
-// #include <thread>
+#include <thread>
 
 #include "TapeConfig.hpp"
 #include "TapeInterface.hpp"
@@ -32,7 +32,7 @@ class FileTape : public TapeInterface {
   void applyDelay(uint64_t delay_ms) {
     if (delay_ms > 0) {
       total_time_delay_ += delay_ms;
-      // std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
+      std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
     }
   }
   uint64_t position_ = 0;
