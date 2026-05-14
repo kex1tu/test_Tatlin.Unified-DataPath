@@ -110,16 +110,15 @@ uint64_t kElementLimit = std::max<uint64_t>(
 ### GitHub Actions
 Статический анализ и форматирование через cppcheck и clang-format
 
-тестирование алгоритма с различными лимитами памяти:
-low-memory 4 MB
-default 64 MB
-high-memory 512 MB
+Тестирование алгоритма с различными лимитами памяти:
+* low-memory 4 MB
+* default 64 MB
+* high-memory 512 MB
 
 Дополнительные тесты из папки `tests/LargeTests`
 
 Это гарантирует, что программа работает корректно при любых разумных ограничения.
-
-и в конце Valgrind Memcheck
+В конце Valgrind Memcheck
 
 Запуск происходит на своём выделенном сервере.
 
